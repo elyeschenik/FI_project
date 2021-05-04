@@ -2,7 +2,7 @@ from product import *
 
 class Deposit(Product):
 
-    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, deposit_rate, isFloating, convention = 360, notional = 1000):
+    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, deposit_rate, isFloating, convention, notional = 1000):
         super(Deposit, self).__init__(pricing_date, start_date, end_date, curve_1, curve_2, convention, notional)
 
         self.deposit_rate = deposit_rate

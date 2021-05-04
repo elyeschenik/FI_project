@@ -2,10 +2,10 @@ from product import *
 
 class FRA(Product):
 
-    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, isPayer, forward_rate, convention = 360, notional = 1000):
+    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, isPayer, convention, notional = 1000):
         super(FRA, self).__init__(pricing_date, start_date, end_date, curve_1, curve_2, convention, notional)
 
-        self.forward_rate = forward_rate
+        self.forward_rate = self.get_Forward(end_date)
         self.isPayer = isPayer
 
     def PV(self):
