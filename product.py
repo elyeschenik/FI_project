@@ -2,6 +2,7 @@ from abc import abstractmethod
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+from scipy.stats import norm
 
 class Product:
 
@@ -54,7 +55,7 @@ class Product:
 
         return discount_factor
 
-    def get_Forward(self, date = None, curve_num=1):
+    def get_Rate(self, date = None, curve_num=1):
 
         DF = self.get_DF(date, curve_num)
         forward_rate = -np.log(DF)/self.coverage(self.pricing_date, date)
@@ -68,35 +69,13 @@ class Product:
 
         return (1/delta) * ((B_1/B_2) - 1)
 
-    """
-    def get_DF_bis(self, date = None):
-
-        discount_rate = self.get_rate(date)
-        delta = self.coverage(self.pricing_date, date)
-
-        return np.exp(-discount_rate * delta)
-    """
-
-    """
-        def get_rate(self, date = None):
-
-        if date is None:
-            date = self.end_date
-
-        if date == self.pricing_date:
-            return 0
-
-        if date in self.curve_1.index:
-            discount_rate = self.curve_1.loc[date].values[0]
+    def BSClosedForm(self, S_0, K, r, sigma, T, isCall):
+        d1 = (np.log(S_0 / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+        d2 = d1 - sigma * np.sqrt(T)
+        if isCall:
+            return S_0 * norm.cdf(d1) - np.exp(-r * T) * K * norm.cdf(d2)
         else:
-            d_bottom = self.curve_1.loc[self.curve_1.index < date].index[-1]
-            d_up = self.curve_1.loc[self.curve_1.index > date].index[0]
+            return -S_0 * norm.cdf(-d1) + np.exp(-r * T) * K * norm.cdf(-d2)
 
-            self.curve_1.loc[date] = None
 
-            discount_rate = self.curve_1.sort_index().loc[[d_bottom, date, d_up]].interpolate(method='time').loc[date].values[0]
-
-            self.curve_1.drop(date, axis = 0, inplace = True)
-
-        return discount_rate
-    """
+   
