@@ -5,7 +5,7 @@ class FRA(Product):
     def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, isPayer, convention, notional = 1000):
         super(FRA, self).__init__(pricing_date, start_date, end_date, curve_1, curve_2, convention, notional)
 
-        self.forward_rate = self.get_Forward(end_date)
+        self.forward_rate = self.get_Rate(end_date)
         self.isPayer = isPayer
 
     def PV(self):
