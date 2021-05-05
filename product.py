@@ -22,8 +22,11 @@ class Product:
         self.convention = convention
 
 
-    def coverage(self, date_1, date_2):
-        return (date_2 - date_1).days/self.convention.day_count_basis
+    def coverage(self, date_1, date_2, convention = None):
+        if convention is None:
+            return (date_2 - date_1).days/self.convention.day_count_basis
+        else:
+            return (date_2 - date_1).days / convention.day_count_basis
 
 
     def get_DF(self, date = None, curve_num = 1):
@@ -61,9 +64,8 @@ class Product:
         forward_rate = -np.log(DF)/self.coverage(self.pricing_date, date)
         return forward_rate
 
-    def get_LIBOR(self, date_1, date_2, curve_num=1):
-
-        delta = self.coverage(date_1, date_2)
+    def get_LIBOR(self, date_1, date_2, convention = None, curve_num = 1):
+        delta = self.coverage(date_1, date_2, convention)
         B_1 = self.get_DF(date_1, curve_num)
         B_2 = self.get_DF(date_2, curve_num)
 
