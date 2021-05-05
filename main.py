@@ -3,6 +3,8 @@ from fra import *
 from swap import *
 from convention import *
 from swaption import *
+from workalendar.usa import NewYork
+
 
 type_of_product = input("What product do you want to price (type \"Deposit\", \"FRA\" \"Swap\", \"PSwaption\" or \"CSSwaption\")?")
 
@@ -14,7 +16,7 @@ curve_1 = pd.read_excel("curves.xlsx", sheet_name="OIS Curve for discounting", i
 curve_2 = pd.read_excel("curves.xlsx", sheet_name="USD3M - Curve for forwards", index_col=0)
 
 
-convention = convention(365, "aasba", "aasba")
+convention = convention(365, NewYork(), 2)
 
 notional = 1000000
 

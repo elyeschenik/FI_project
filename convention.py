@@ -1,3 +1,4 @@
+from workalendar.usa import NewYork
 class convention:
 
     def __init__(self, day_count_basis, holidays, fixing_lag):
