@@ -2,14 +2,14 @@ from product import *
 
 class Deposit(Product):
 
-    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, deposit_rate, isFloating, convention, notional = 1000):
-        super(Deposit, self).__init__(pricing_date, start_date, end_date, curve_1, curve_2, convention, notional)
+    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, deposit_rate, isFloating, forward_convention, discount_convention, notional = 1000):
+        super(Deposit, self).__init__(pricing_date, start_date, end_date, curve_1, curve_2, forward_convention, discount_convention, notional)
 
         self.deposit_rate = deposit_rate
         self.isFloating = isFloating
 
     def PV(self):
-        delta = self.coverage(self.start_date, self.end_date)
+        delta = self.forward_convention.coverage(self.start_date, self.end_date)
 
         if self.isFloating:
             r = self.get_LIBOR(self.start_date, self.end_date)
