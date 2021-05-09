@@ -6,7 +6,7 @@ from scipy.stats import norm
 
 class Product:
 
-    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, convention, notional):
+    def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, forward_convention, discount_convention, notional):
 
         super(Product, self).__init__()
 
@@ -19,14 +19,16 @@ class Product:
 
         self.notional = notional
 
-        self.convention = convention
+        self.forward_convention = forward_convention
+        self.discount_convention = discount_convention
 
-
+    """
     def coverage(self, date_1, date_2, convention = None):
         if convention is None:
             return (date_2 - date_1).days/self.convention.day_count_basis
         else:
             return (date_2 - date_1).days / convention.day_count_basis
+    """
 
 
     def get_DF(self, date = None, curve_num = 1):
@@ -58,16 +60,25 @@ class Product:
 
         return discount_factor
 
-    def get_Rate(self, date = None, curve_num=1):
+    def get_Rate(self, date = None, curve_num = 2):
 
         DF = self.get_DF(date, curve_num)
-        forward_rate = -np.log(DF)/self.coverage(self.pricing_date, date)
+        if curve_num == 1:
+            conv = self.discount_convention
+        elif curve_num == 2:
+            conv = self.forward_convention
+        else:
+            raise Exception("Wrong curve number, input 1 or 2")
+        forward_rate = -np.log(DF)/conv.coverage(self.pricing_date, date)
         return forward_rate
 
-    def get_LIBOR(self, date_1, date_2, convention = None, curve_num = 1):
-        delta = self.coverage(date_1, date_2, convention)
+    def get_LIBOR(self, date_1, date_2, conv = None, curve_num = 2):
+        if conv is None:
+            conv = self.forward_convention
+        date_2_adj = self.forward_convention.add_date(date_2, -conv.fixing_lag, False)
+        delta = conv.coverage(date_1, date_2_adj)
         B_1 = self.get_DF(date_1, curve_num)
-        B_2 = self.get_DF(date_2, curve_num)
+        B_2 = self.get_DF(date_2_adj, curve_num)
 
         return (1/delta) * ((B_1/B_2) - 1)
 
