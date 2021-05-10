@@ -2,7 +2,7 @@
 
 ## Authors :
 
-Elyès CHENIK : elyes.chenik@dauphine.eu
+Elyès CHENIK : elyes.chenik@gmail.com
 
 Inès BIDAL : inesbidal@hotmail.fr
 
