@@ -30,8 +30,11 @@ pricing_date = sht.range('B5').value
 start_date = sht.range('B6').value
 end_date = sht.range('B7').value
 
-curve_1 = pd.read_excel("curves.xlsx", sheet_name="OIS Curve for discounting", index_col=0)
-curve_2 = pd.read_excel("curves.xlsx", sheet_name="USD3M - Curve for forwards", index_col=0)
+curve_1_temp = pd.read_excel("curves.xlsx", sheet_name="OIS Curve for discounting", index_col=0)
+curve_2_temp = pd.read_excel("curves.xlsx", sheet_name="USD3M - Curve for forwards", index_col=0)
+
+
+
 
 
 calendar = sht.range('B9').value
@@ -44,10 +47,16 @@ fixing_lag_forward = sht.range('B16').value
 forward_convention = convention(day_count_basis_forward, calendar, fixing_lag_forward)
 discount_convention = convention(day_count_basis_discount, calendar, 0)
 
+curve_1 = -np.log(curve_1_temp) / np.array(
+            discount_convention.coverage(datetime(2021, 4, 5), curve_1_temp.index)).reshape(-1, 1)
+curve_2 = -np.log(curve_2_temp) / np.array(
+            forward_convention.coverage(datetime(2021, 4, 5), curve_2_temp.index)).reshape(-1, 1)
+
+
 def Read_Params():
     global type_of_product, notional, pricing_date, start_date, \
         end_date, forward_convention, discount_convention, calendar,\
-        day_count_basis_discount, day_count_basis_forward, fixing_lag_forward
+        day_count_basis_discount, day_count_basis_forward, fixing_lag_forward, curve_1, curve_2
 
     type_of_product = sht.range('B2').value
     notional = sht.range('B3').value
@@ -62,6 +71,11 @@ def Read_Params():
     fixing_lag_forward = sht.range('B16').value
     forward_convention = convention(day_count_basis_forward, calendar, fixing_lag_forward)
     discount_convention = convention(day_count_basis_discount, calendar, 0)
+
+    curve_1 = -np.log(curve_1_temp) / np.array(
+        discount_convention.coverage(datetime(2021, 4, 5), curve_1_temp.index)).reshape(-1, 1)
+    curve_2 = -np.log(curve_2_temp) / np.array(
+        forward_convention.coverage(datetime(2021, 4, 5), curve_2_temp.index)).reshape(-1, 1)
 
 
 ##############################DEPOSIT##############################
@@ -184,6 +198,8 @@ def Compute_CSSwaption_SABR():
     sht.range('L36').value = CSSWAPTION_SABR.PV()
     sht.range('L37').value = CSSWAPTION_SABR.Get_implied_SABR()
 
+    return CSSWAPTION_SABR
+
 ############################### CMS ################################
 def Compute_CMS():
     Read_Params()
@@ -235,16 +251,14 @@ def Compute_CMS_SABR():
 
     sht.range('O36').value = MyCMS_SABR.PV()
     #sht.range('O37').value = MyCMS_SABR.swaptions[0].Get_implied_SABR()
+    return MyCMS_SABR
 
 #test = Compute_PSwaption()
-test_bis = Compute_CSSwaption()
-#test_bis = Compute_CSSwaption_SABR()
-#test = Compute_CMS_SABR()
+cswap = Compute_CSSwaption()
+#cswap = Compute_CSSwaption_SABR()
+#cms = Compute_CMS_SABR()
+#cswap_2 = cms.swaptions[0]
 
-
-if __name__ == '__main__':
-    # Expects the Excel file next to this source file, adjust accordingly.
-    wb.set_mock_caller()
 
 
 

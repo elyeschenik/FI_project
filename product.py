@@ -14,24 +14,17 @@ class Product:
         self.start_date = start_date
         self.end_date = end_date
 
-        self.curve_1 = curve_1
-        self.curve_2 = curve_2
 
         self.notional = notional
 
         self.forward_convention = forward_convention
         self.discount_convention = discount_convention
 
-    """
-    def coverage(self, date_1, date_2, convention = None):
-        if convention is None:
-            return (date_2 - date_1).days/self.convention.day_count_basis
-        else:
-            return (date_2 - date_1).days / convention.day_count_basis
-    """
+        self.curve_1 = curve_1
+        self.curve_2 = curve_2
 
 
-    def get_DF(self, date = None, curve_num = 1):
+    def get_Rate(self, date = None, curve_num = 1):
 
         if curve_num == 1:
             curve = self.curve_1
@@ -47,30 +40,32 @@ class Product:
             return 1
 
         if date in curve.index:
-            discount_factor = curve.loc[date].values[0]
+            rate = curve.loc[date].values[0]
         else:
             d_bottom = curve.loc[curve.index < date].index[-1]
             d_up = curve.loc[curve.index > date].index[0]
 
             curve.loc[date] = None
 
-            discount_factor = curve.sort_index().loc[[d_bottom, date, d_up]].interpolate(method='time').loc[date].values[0]
+            rate = curve.sort_index().loc[[d_bottom, date, d_up]].interpolate(method='time').loc[date].values[0]
 
             curve.drop(date, axis = 0, inplace = True)
 
-        return discount_factor
+        return rate
 
-    def get_Rate(self, date = None, curve_num = 2):
+    def get_DF(self, date = None, curve_num = 1):
 
-        DF = self.get_DF(date, curve_num)
+        rate = self.get_Rate(date, curve_num)
         if curve_num == 1:
             conv = self.discount_convention
         elif curve_num == 2:
             conv = self.forward_convention
         else:
             raise Exception("Wrong curve number, input 1 or 2")
-        forward_rate = -np.log(DF)/conv.coverage(self.pricing_date, date)
-        return forward_rate
+
+        delta = conv.coverage(self.pricing_date, date)
+        DF = np.exp(-rate * delta)
+        return DF
 
     def get_LIBOR(self, date_1, date_2, conv = None, curve_num = 2):
         if conv is None:
