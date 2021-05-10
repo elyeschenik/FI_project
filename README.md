@@ -12,7 +12,7 @@ Baptiste SOUILHAC : baptiste.souilhac@dauphine.eu
 
 ## Installation :
 
-Required packages: numpy, pandas, abc, datetime, matplotlib, workalendar, xlwings, scipy
+Required packages: numpy, pandas, abc, datetime, matplotlib, xlwings, scipy
 
 ## To run the code :
 
