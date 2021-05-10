@@ -182,6 +182,7 @@ def Compute_CSSwaption_SABR():
                                                  notional)
 
     sht.range('L36').value = CSSWAPTION_SABR.PV()
+    sht.range('L37').value = CSSWAPTION_SABR.Get_implied_SABR()
 
 ############################### CMS ################################
 def Compute_CMS():
@@ -233,10 +234,12 @@ def Compute_CMS_SABR():
                 fixed_freq, float_freq, fixed_convention, float_convention, sigma_0, alpha, beta, rho,  forward_convention, discount_convention, notional)
 
     sht.range('O36').value = MyCMS_SABR.PV()
+    #sht.range('O37').value = MyCMS_SABR.swaptions[0].Get_implied_SABR()
 
-test = Compute_PSwaption()
-#test_bis = Compute_CSSwaption()
+#test = Compute_PSwaption()
+test_bis = Compute_CSSwaption()
 #test_bis = Compute_CSSwaption_SABR()
+#test = Compute_CMS_SABR()
 
 
 if __name__ == '__main__':
