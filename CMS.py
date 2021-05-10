@@ -24,20 +24,18 @@ class CMS_Mother(Product):
 
 
     @abstractmethod
-    def Build_Swaption(self, j , spot_rate, spot_rate_level, dates):
+    def Build_Swaption(self, j , spot_rate, dates):
         pass
 
     def Get_Swaptions(self):
         spot_rate = None
-        spot_rate_level = None
         dates = None
         for j in range(self.nb_strikes):
-            MySwaption = self.Build_Swaption(j , spot_rate, spot_rate_level, dates)
+            MySwaption = self.Build_Swaption(j , spot_rate, dates)
             self.swaptions.append(MySwaption)
             self.swaption_prices[j] = MySwaption.PV()
             if spot_rate is None:
                 spot_rate = MySwaption.spot_swap_rate
-                spot_rate_level = MySwaption.spot_swap_rate_level
                 dates = MySwaption.dates
 
 
@@ -67,10 +65,10 @@ class CMS(CMS_Mother):
     def __init__(self, pricing_date, start_date, end_date, curve_1, curve_2, isPayer, strike, nb_strikes, fixed_freq, float_freq, fixed_convention, float_convention, vol, forward_convention, discount_convention, notional = 1000):
         super(CMS, self).__init__(pricing_date, start_date, end_date, curve_1, curve_2, isPayer, strike, nb_strikes, fixed_freq, float_freq, fixed_convention, float_convention, vol, forward_convention, discount_convention, notional)
 
-    def Build_Swaption(self, j , spot_rate, spot_rate_level, dates):
+    def Build_Swaption(self, j , spot_rate, dates):
         return Cash_Settled_Swaption(self.pricing_date, self.start_date, self.end_date, self.start_date, self.curve_1,
                               self.curve_2, self.isPayer, self.strikes[j], self.fixed_freq, self.float_freq, self.fixed_convention,
-                              self.float_convention ,self.vol, self.forward_convention, self.discount_convention, self.notional, spot_rate, spot_rate_level, dates)
+                              self.float_convention ,self.vol, self.forward_convention, self.discount_convention, self.notional, spot_rate, dates)
 
 
 class CMS_SABR(CMS_Mother):
@@ -82,10 +80,10 @@ class CMS_SABR(CMS_Mother):
         self.beta = beta
         self.rho = rho
 
-    def Build_Swaption(self, j , spot_rate, spot_rate_level, dates):
+    def Build_Swaption(self, j , spot_rate, dates):
         return Cash_Settled_Swaption_SABR(self.pricing_date, self.start_date, self.end_date, self.start_date, self.curve_1,
                               self.curve_2, self.isPayer, self.strikes[j], self.fixed_freq, self.float_freq, self.fixed_convention,
                               self.float_convention , self.sigma_0, self.alpha, self.beta, self.rho, self.forward_convention,
-                              self.fixed_convention, self.notional, spot_rate, spot_rate_level, dates)
+                              self.fixed_convention, self.notional, spot_rate , dates)
 
         

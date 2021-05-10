@@ -42,9 +42,3 @@ class Swap(Product):
         return par_rate
 
 
-
-        #for date in self.float_dates[1:]:
-        #    print("Date =", date)
-        #    print("Coverage =",self.coverage(self.float_dates[self.float_dates.index(date) - 1], date))
-        #    print("Rate =", (1/self.coverage(self.float_dates[self.float_dates.index(date) - 1], date)) * (self.get_DF(self.float_dates[self.float_dates.index(date) - 1])/self.get_DF(date) - 1))
-        #    print("CF=", self.notional * self.get_DF(date) * self.coverage(self.float_dates[self.float_dates.index(date) - 1], date) *((1/self.coverage(self.float_dates[self.float_dates.index(date) - 1], date)) * (self.get_DF(self.float_dates[self.float_dates.index(date) - 1])/self.get_DF(date) - 1)))
