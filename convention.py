@@ -39,17 +39,7 @@ class convention:
             return (self.month_delta(date_1, date_2) * 30 + (date_2.day - date_1.day))/360
         else:
             raise Exception("Unexpected convention")
-    """ 
-    def add_date(self, initial_date, frequency):
-        if self.day_count_basis == "ACT/365":
-            return initial_date + timedelta(days = 365/frequency)
-        elif self.day_count_basis == "ACT/360":
-            return initial_date + timedelta(days=360 / frequency)
-        elif self.day_count_basis == "30/360":
-            return initial_date + timedelta(days=360 / frequency)
-        else:
-            raise Exception("Unexpected convention")
-    """
+
     def add_date(self, initial_date, nb_days, up = True):
         out_date = initial_date + timedelta(days = nb_days)
         while (out_date.month, out_date.day) in self.holidays:

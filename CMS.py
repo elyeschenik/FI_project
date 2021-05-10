@@ -17,16 +17,11 @@ class CMS_Mother(Product):
         self.vol = vol
         self.expiry = start_date
 
-
-        self.strikes = np.zeros(nb_strikes)
+        self.strikes = self.strike + np.array(range(self.nb_strikes))**2 * (4*self.strike)/(self.nb_strikes**2)
         self.weights = np.zeros(nb_strikes)
         self.swaptions = []
         self.swaption_prices = np.zeros(nb_strikes)
 
-
-    def Get_Strikes(self):
-        for j in range(self.nb_strikes):
-            self.strikes[j] = self.strike + j**2 * (4*self.strike)/(self.nb_strikes**2)
 
     @abstractmethod
     def Build_Swaption(self, j , spot_rate, spot_rate_level, dates):
@@ -39,7 +34,7 @@ class CMS_Mother(Product):
         for j in range(self.nb_strikes):
             MySwaption = self.Build_Swaption(j , spot_rate, spot_rate_level, dates)
             self.swaptions.append(MySwaption)
-            self.swaption_prices[j] = self.swaptions[j].PV()
+            self.swaption_prices[j] = MySwaption.PV()
             if spot_rate is None:
                 spot_rate = MySwaption.spot_swap_rate
                 spot_rate_level = MySwaption.spot_swap_rate_level
@@ -48,18 +43,17 @@ class CMS_Mother(Product):
 
 
     def Get_Weights(self):
-        self.weights[0] = 1/self.swaptions[1].Get_Level(self.strikes[1])
+        self.weights[0] = 1/self.swaptions[1].Get_Level_Cash(self.strikes[1])
         for j in range(1,self.nb_strikes - 1):
             K_j_1 = self.strikes[j+1]
             K_j = self.strikes[j]
-            L_K_j_1 = self.swaptions[j+1].Get_Level(K_j_1)
+            L_K_j_1 = self.swaptions[j+1].Get_Level_Cash(K_j_1)
             self.weights[j] = (1/(K_j_1 - K_j))*(((K_j_1 - self.strike)/L_K_j_1) - np.dot(self.weights[:j], K_j_1 - self.strikes[:j]))
 
         self.weights = self.weights/self.weights.sum()
 
 
     def PV(self):
-        self.Get_Strikes()
         self.Get_Swaptions()
         self.Get_Weights()
         out = np.dot(self.weights, self.swaption_prices)

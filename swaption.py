@@ -6,6 +6,9 @@ class Swaption(Product):
 
     def __init__(self, pricing_date, start_date, end_date, expiry, curve_1, curve_2, isPayer, strike, fixed_freq, float_freq, fixed_convention, float_convention, vol, forward_convention, discount_convention, notional = 1000):
         super(Swaption, self).__init__(pricing_date, start_date, end_date, curve_1, curve_2, forward_convention, discount_convention, notional)
+        self.swap = Swap(pricing_date, start_date, end_date, curve_1, curve_2, isPayer, 0, fixed_freq, float_freq,
+                         fixed_convention, float_convention, forward_convention, discount_convention, notional)
+        self.spot_swap_rate = self.swap.Get_forward_rate()
 
         self.isPayer = isPayer
         self.fixed_freq = fixed_freq
@@ -16,11 +19,7 @@ class Swaption(Product):
         self.expiry = expiry
 
         self.Level = None
-   
 
-    @abstractmethod
-    def Get_Level(self):
-        pass
 
     @abstractmethod
     def PV(self):
@@ -29,26 +28,10 @@ class Swaption(Product):
 class Physical_Swaption(Swaption):
     def __init__(self, pricing_date, start_date, end_date, expiry, curve_1, curve_2, isPayer, strike, fixed_freq, float_freq, fixed_convention, float_convention, vol, forward_convention, discount_convention, notional = 1000):
         super(Physical_Swaption, self).__init__(pricing_date, start_date, end_date, expiry, curve_1, curve_2, isPayer, strike, fixed_freq, float_freq, fixed_convention, float_convention, vol, forward_convention, discount_convention, notional)
-        self.swap = Swap(pricing_date, start_date, end_date, curve_1, curve_2, isPayer, 0, fixed_freq, float_freq, fixed_convention, float_convention, forward_convention, discount_convention, notional)
-        self.spot_swap_rate = self.swap.Get_par_rate()
 
-    def Get_Level(self):
-        dates = self.swap.fixed_dates
-        conv = self.swap.fixed_convention
-        Level = sum([self.get_DF(date, 1) * conv.coverage(dates[dates.index(date) - 1],
-                                                                date) for date in dates[1:]])
-        self.Level = Level
-        return Level
-
-
-    def Get_Level_approx(self):
-        delta = 1 / self.fixed_freq
-        N = self.forward_convention.coverage(self.start_date, self.end_date) * self.fixed_freq
-        self.Level = N * delta
-        return N * delta
 
     def PV(self):
-        self.Get_Level()
+        self.Level = self.swap.Level
         T = self.forward_convention.coverage(self.pricing_date, self.expiry)
         if self.isPayer:
             return self.notional * self.Level * self.BSClosedForm(self.spot_swap_rate, self.strike, 0, self.vol, T, True)
@@ -60,15 +43,17 @@ class Cash_Settled_Swaption(Swaption):
     def __init__(self, pricing_date, start_date, end_date, expiry, curve_1, curve_2, isPayer, strike, fixed_freq, float_freq, fixed_convention, float_convention, vol, forward_convention, discount_convention, notional = 1000, spot_swap_rate = None, spot_swap_rate_level = None, dates = None):
         super(Cash_Settled_Swaption, self).__init__(pricing_date, start_date, end_date, expiry, curve_1, curve_2, isPayer, strike, fixed_freq, float_freq, fixed_convention, float_convention, vol, forward_convention, discount_convention, notional)
 
+        self.Level_Cash = 0
+
         if spot_swap_rate is None:
             self.swap = Swap(pricing_date, start_date, end_date, curve_1, curve_2, isPayer, 0, fixed_freq, float_freq, fixed_convention, float_convention, forward_convention, discount_convention, notional)
-            self.spot_swap_rate = self.swap.Get_par_rate()
+            self.spot_swap_rate = self.swap.Get_forward_rate()
         else:
             self.spot_swap_rate = spot_swap_rate
 
         if spot_swap_rate_level is None:
             self.swap_level = Swap(expiry, start_date, end_date, curve_1, curve_2, isPayer, 0, fixed_freq, float_freq, fixed_convention, float_convention, forward_convention, discount_convention, notional)
-            self.spot_swap_rate_level = self.swap_level.Get_par_rate()
+            self.spot_swap_rate_level = self.swap_level.Get_forward_rate()
         else:
             self.spot_swap_rate_level = spot_swap_rate_level
 
@@ -77,6 +62,7 @@ class Cash_Settled_Swaption(Swaption):
         else:
             self.dates = dates
 
+    """
     def Get_Level_bis(self, s = None):
         N = self.forward_convention.coverage(self.start_date, self.end_date)
         if s is None:
@@ -89,17 +75,19 @@ class Cash_Settled_Swaption(Swaption):
         if s is not None:
             self.Level = Level
         return Level
+    """
 
-    def Get_Level(self, s = None):
+
+    def Get_Level_Cash(self, s = None):
         N = len(self.dates)
         f = self.fixed_freq
         if s is None:
             s = self.spot_swap_rate_level
 
-        Level = sum([(1 + s/f)**(-i*f) for i in range(1, N)])
+        Level_Cash = sum([(1 + s/f)**(-i*f) for i in range(1, N)])
 
-        self.Level = Level
-        return Level
+        self.Level_Cash = Level_Cash
+        return Level_Cash
 
     @abstractmethod
     def Get_implied_SABR(self):
@@ -107,19 +95,19 @@ class Cash_Settled_Swaption(Swaption):
 
     def PV(self):
         Flag = False
-        self.Get_Level()
+        self.Get_Level_Cash()
         if self.vol is None:
             self.Get_implied_SABR()
             Flag = True
         T = self.forward_convention.coverage(self.pricing_date, self.expiry)
         if self.isPayer:
-            out = self.notional * self.get_DF(self.expiry) * self.Level * self.BSClosedForm(self.spot_swap_rate, self.strike, 0, self.vol, T, True)
+            out = self.notional * self.get_DF(self.expiry) * self.Level_Cash * self.BSClosedForm(self.spot_swap_rate, self.strike, 0, self.vol, T, True)
         else:
-            out = -self.notional * self.get_DF(self.expiry) * self.Level * self.BSClosedForm(self.spot_swap_rate, self.strike, 0, self.vol, T, True)
+            out = -self.notional * self.get_DF(self.expiry) * self.Level_Cash * self.BSClosedForm(self.spot_swap_rate, self.strike, 0, self.vol, T, True)
         if Flag:
             self.vol = None
         return out
-    
+
 class Cash_Settled_Swaption_SABR(Cash_Settled_Swaption):
     def __init__(self, pricing_date, start_date, end_date, expiry, curve_1, curve_2, isPayer, strike, fixed_freq, float_freq, fixed_convention, float_convention, sigma_0, alpha, beta, rho, forward_convention, discount_convention, notional = 1000, spot_rate = None, spot_swap_rate_level = None, dates = None):
         super(Cash_Settled_Swaption_SABR, self).__init__(pricing_date, start_date, end_date, expiry, curve_1, curve_2, isPayer, strike, fixed_freq, float_freq, fixed_convention, float_convention, None, forward_convention, discount_convention, notional, spot_rate, spot_swap_rate_level, dates)
@@ -130,6 +118,7 @@ class Cash_Settled_Swaption_SABR(Cash_Settled_Swaption):
         self.rho = rho
 
     def Get_implied_SABR(self):
+        #self.spot_swap_rate = 0.027
         T_ex = self.forward_convention.coverage(self.pricing_date, self.expiry)
         C = (self.spot_swap_rate * self.strike)**((1 - self.beta)/2)
 
@@ -149,13 +138,14 @@ class Cash_Settled_Swaption_SABR(Cash_Settled_Swaption):
         return SABR_vol
 
 
-    def Get_implied_SABR_bis(self):
+    def Get_implied_SABR_approx(self):
         lbda = (self.alpha/self.sigma_0) * self.spot_swap_rate ** (1 - self.beta)
         part_1 = - 0.5 * (1 - self.beta - self.rho * lbda) * np.log(self.strike/self.spot_swap_rate)
         part_2 = (1/12) * ((1 - self.beta)**2 + (2 - 3 * self.rho**2)*lbda**2) * np.log(self.strike/self.spot_swap_rate)**2
         SABR_vol = (self.sigma_0/ (self.spot_swap_rate ** (1 - self.beta))) * (1 + part_1 + part_2)
         self.vol = SABR_vol
         return SABR_vol
+
 
 
 
